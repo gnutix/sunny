@@ -244,11 +244,6 @@ footer {
   color: var(--muted);
 }
 footer p { max-width: 70ch; }
-footer details { margin-top: 10px; }
-footer summary { cursor: pointer; color: var(--ink); }
-footer .key { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-footer .key input { flex: 1 1 260px; border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 5px 8px; }
-footer .key button { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 5px 12px; cursor: pointer; }
 
 @media (max-width: 600px) {
   .row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -312,15 +307,7 @@ footer .key button { border: 1px solid var(--line); background: var(--card); bor
 
 <footer>
   <p id="status"></p>
-  <p>Sun: the MeteoSwiss ICON-CH1 and ICON-CH2 ensembles through <a href="https://open-meteo.com/">Open-Meteo</a>. Each of their 21 to 32 runs is a plausible forecast; the percentage is the share of runs that give you at least 20 minutes of sun (or half the time left, if less). The sun counts only when it is above the local terrain, from a 90 m elevation model. Best trade-off ranks places by expected sun minus the time spent driving there. Drives: <span id="drive-source">OpenStreetMap routing, without traffic</span>. Restaurants: OpenStreetMap.</p>
-  <details>
-    <summary>Live traffic with Google Maps</summary>
-    <p>Paste a Google Maps Platform key with the Routes API enabled, restricted to this site's address. It stays in this browser.</p>
-    <form class="key" id="key-form">
-      <input type="password" id="google-key" autocomplete="off" placeholder="Google Maps API key" aria-label="Google Maps API key">
-      <button type="submit">Save key</button>
-    </form>
-  </details>
+  <p>Sun: the MeteoSwiss ICON-CH1 and ICON-CH2 ensembles through <a href="https://open-meteo.com/">Open-Meteo</a>. Each of their 21 to 32 runs is a plausible forecast; the percentage is the share of runs that give you at least 20 minutes of sun (or half the time left, if less). The sun counts only when it is above the local terrain, from a 90 m elevation model. Best trade-off ranks places by expected sun minus the time spent driving there. Drives: <span id="drive-source">Google Maps, with traffic</span>. Restaurants: OpenStreetMap.</p>
 </footer>
 
 <script type="module" src="app.js"></script>

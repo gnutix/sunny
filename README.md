@@ -6,8 +6,8 @@ https://gnutix.github.io/sunny/
 
 For each place within reach, the page shows:
 
-- **the drive**: OpenStreetMap routing (no traffic), or Google Maps with traffic once a Routes API
-  key is pasted in the footer;
+- **the drive**: Google Maps with live traffic (typical traffic for a later departure), or
+  OpenStreetMap routing without traffic when Google doesn't answer;
 - **the sun you'll get**: expected minutes of direct sun from your arrival until the sun sets
   *behind the local terrain*, which in the mountains is often an hour before the real sunset;
 - **how sure it is**: the share of MeteoSwiss ensemble runs (ICON-CH1, 11 runs over 33 h, and
@@ -31,10 +31,11 @@ files network-first, so a push shows up on the next load despite the Pages cache
 | `hours.js` | small OpenStreetMap `opening_hours` reader |
 | `places.js` | generated: places with elevation and horizon profile |
 | `webcams.js` | webcam image and page per place |
+| `config.js` | the Google Maps browser key |
 | `tools/places.json` | the list of places (edit this, then rebuild `places.js`) |
 | `tools/build-places.py` | computes each place's horizon from the Copernicus 90 m DEM |
 
-Data: [Open-Meteo](https://open-meteo.com/) (forecast), [OSRM](https://project-osrm.org/)
+Data: [Open-Meteo](https://open-meteo.com/) (forecast), Google Maps and [OSRM](https://project-osrm.org/)
 (routing), [Overpass](https://overpass-api.de/) (restaurants), Copernicus DEM (terrain), webcams
 from Roundshot, Guidle and the resorts.
 

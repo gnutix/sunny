@@ -2,6 +2,7 @@ import { PLACES, HORIZON_START, HORIZON_STEP } from './places.js';
 import { WEBCAMS } from './webcams.js';
 import { parseEnsemble, evaluate } from './forecast.js';
 import { parseOpeningHours, isOpen } from './hours.js';
+import { GOOGLE_MAPS_KEY } from './config.js';
 
 const TZ = 'Europe/Zurich';
 const HOME = PLACES.find((p) => p.id === 'home');
@@ -25,12 +26,12 @@ const state = {
   leave: null, // 'HH:MM', or null for now
   sort: store.get('sort', 'best'),
   maxDrive: store.get('maxDrive', 90),
-  googleKey: store.get('googleKey', ''),
   open: new Set(),
   forecasts: null, // id -> parsed ensemble
   fetchedAt: 0,
   drives: null, // id -> { minutes, km }
   driveSource: 'osrm',
+  driveSlot: null, // the departure (to 15 minutes) the drives were asked for
 };
 
 /* ---------- Time in Lausanne ---------- */
@@ -120,53 +121,73 @@ async function fetchOsrmDrives() {
   return drives;
 }
 
-// Google's Routes API with live or predicted traffic, when a key is saved
-async function fetchGoogleDrives(leaveAt) {
-  const point = (p) => ({ waypoint: { location: { latLng: { latitude: p.lat, longitude: p.lon } } } });
-  const body = {
-    origins: [point(HOME)],
-    destinations: DESTINATIONS.map(point),
-    travelMode: 'DRIVE',
-    routingPreference: 'TRAFFIC_AWARE',
-  };
-  if (leaveAt > Date.now() + 60e3) body.departureTime = new Date(leaveAt).toISOString();
-  const response = await fetch('https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': state.googleKey,
-      'X-Goog-FieldMask': 'originIndex,destinationIndex,duration,distanceMeters,condition',
-    },
-    body: JSON.stringify(body),
+/* Google Maps, with live traffic for now and typical traffic for later. Each request is
+   26 billed elements (traffic-aware), so answers are kept per 15-minute departure slot:
+   15 minutes for a departure within the hour, 6 hours for one further out. */
+
+let mapsLoading;
+function loadGoogleMaps() {
+  mapsLoading ??= new Promise((resolve, reject) => {
+    window.gm_authFailure = () => reject(new Error('Google Maps refused the key'));
+    window.sunMapsReady = resolve;
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_KEY)}&v=weekly&loading=async&callback=sunMapsReady`;
+    script.onerror = () => reject(new Error('Google Maps did not load'));
+    document.head.append(script);
   });
-  if (!response.ok) throw new Error(`Google: HTTP ${response.status}`);
+  return mapsLoading;
+}
+
+const slotOf = (ms) => Math.round(ms / 900e3) * 900e3;
+
+async function fetchGoogleDrives(leaveAt) {
+  const slot = slotOf(leaveAt);
+  const signature = PLACES.map((p) => `${p.id}@${p.lat},${p.lon}`).join(';');
+  const now = Date.now();
+  const maxAge = (at) => (at < now + 3600e3 ? 15 * 60e3 : 6 * 3600e3);
+  const cache = store.get('google', {});
+  const kept = Object.fromEntries(Object.entries(cache).filter(([s, e]) => e.signature === signature && now - e.at < maxAge(+s)));
+  if (kept[slot]) return kept[slot].drives;
+  await loadGoogleMaps();
+  const { RouteMatrix } = await google.maps.importLibrary('routes');
+  const request = {
+    origins: [{ lat: HOME.lat, lng: HOME.lon }],
+    destinations: DESTINATIONS.map((p) => ({ lat: p.lat, lng: p.lon })),
+    travelMode: 'DRIVING',
+    routingPreference: 'TRAFFIC_AWARE',
+    fields: ['condition', 'durationMillis', 'distanceMeters'],
+  };
+  if (leaveAt > now + 60e3) request.departureTime = new Date(leaveAt);
+  const { matrix } = await RouteMatrix.computeRouteMatrix(request);
   const drives = {};
-  for (const e of await response.json()) {
-    if (e.condition !== 'ROUTE_EXISTS') continue;
-    drives[DESTINATIONS[e.destinationIndex].id] = { minutes: parseInt(e.duration, 10) / 60, km: e.distanceMeters / 1000 };
-  }
+  matrix.rows[0].items.forEach((item, i) => {
+    if (item.condition === 'ROUTE_EXISTS') drives[DESTINATIONS[i].id] = { minutes: item.durationMillis / 60e3, km: item.distanceMeters / 1000 };
+  });
+  kept[slot] = { at: now, signature, drives };
+  store.set('google', kept);
   return drives;
 }
 
+// Google Maps when there is a key; OpenStreetMap fills in whatever Google could not answer
 let driveRequest = 0;
 async function loadDrives() {
   const request = ++driveRequest;
-  if (state.googleKey) {
+  const leaveAt = departure();
+  const osrm = fetchOsrmDrives();
+  let drives = null;
+  if (GOOGLE_MAPS_KEY) {
     try {
-      const drives = await fetchGoogleDrives(departure());
-      if (request !== driveRequest) return;
-      state.drives = drives;
+      drives = { ...(await osrm.catch(() => ({}))), ...(await fetchGoogleDrives(leaveAt)) };
       state.driveSource = 'google';
-      return;
     } catch (error) {
       console.warn(error);
       state.driveSource = 'google-failed';
     }
-  } else {
-    state.driveSource = 'osrm';
   }
-  const drives = await fetchOsrmDrives();
-  if (request === driveRequest) state.drives = drives;
+  drives ??= await osrm;
+  if (request !== driveRequest) return;
+  state.drives = drives;
+  state.driveSlot = slotOf(leaveAt);
 }
 
 /* ---------- Evaluation ---------- */
@@ -457,7 +478,7 @@ function renderStatus() {
   if (state.error) parts.push(state.error);
   $('status').textContent = parts.join(' ');
   $('drive-source').textContent = state.driveSource === 'google' ? 'Google Maps, with traffic'
-    : state.driveSource === 'google-failed' ? 'OpenStreetMap routing, without traffic (Google Maps refused the key)'
+    : state.driveSource === 'google-failed' ? 'OpenStreetMap routing, without traffic (Google Maps did not answer)'
     : 'OpenStreetMap routing, without traffic';
 }
 
@@ -465,7 +486,8 @@ async function refresh(force = false) {
   state.error = null;
   const jobs = [];
   if (force || !state.forecasts || Date.now() - state.fetchedAt > FORECAST_MAX_AGE) jobs.push(fetchForecasts());
-  if (force || !state.drives) jobs.push(loadDrives());
+  const stale = GOOGLE_MAPS_KEY && state.driveSource === 'google' && state.driveSlot !== slotOf(departure());
+  if (force || !state.drives || stale) jobs.push(loadDrives());
   const outcomes = await Promise.allSettled(jobs);
   const failed = outcomes.find((o) => o.status === 'rejected');
   if (failed) state.error = `Could not load everything (${failed.reason.message}). It tries again every minute.`;
@@ -480,17 +502,18 @@ $('days').addEventListener('click', (e) => {
   state.day = +b.dataset.day;
   if (state.day > 0 && !state.leave) state.leave = '10:00';
   if (state.day === 0 && state.leave === '10:00' && Date.now() > departure()) state.leave = null;
-  if (state.driveSource === 'google') loadDrives().then(render);
+  if (GOOGLE_MAPS_KEY) loadDrives().then(render);
   render();
 });
 $('leave').addEventListener('change', (e) => {
   state.leave = e.target.value || null;
-  if (state.driveSource === 'google') loadDrives().then(render);
+  if (GOOGLE_MAPS_KEY) loadDrives().then(render);
   render();
 });
 $('now').addEventListener('click', () => {
   state.day = 0;
   state.leave = null;
+  if (GOOGLE_MAPS_KEY) loadDrives().then(render);
   render();
 });
 $('max-drive').addEventListener('change', (e) => {
@@ -516,15 +539,6 @@ $('places').addEventListener('click', (e) => {
   }
   render();
 });
-$('key-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  state.googleKey = $('google-key').value.trim();
-  store.set('googleKey', state.googleKey);
-  state.drives = null;
-  refresh();
-});
-$('google-key').value = state.googleKey;
-
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 setInterval(() => { if (!document.hidden) refresh(); }, 60e3); // "now" moves on, the forecast ages
 

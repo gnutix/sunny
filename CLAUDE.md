@@ -11,8 +11,10 @@ files; this is what a session needs to change them safely.
   `gh api repos/gnutix/sunny/pages/builds/latest --jq '.status + " " + .commit[0:7]'`.
 - `sw.js` serves the app's own files network-first (bypassing Pages' 10-minute cache), Google Fonts
   cache-first, and leaves every API and webcam request alone: those are live data, never cache them.
-- Everything committed is public. No secrets: the optional Google key lives only in the viewer's
-  localStorage.
+- Everything committed is public. `config.js` holds the Google Maps browser key, public by design:
+  in Google Cloud (project of gnutix@gmail.com) it is restricted to `https://gnutix.github.io/*`
+  and `http://127.0.0.1:8765/*`, to the Maps JavaScript and Routes APIs, under a daily quota cap.
+  Never commit any other kind of key.
 
 ## Code
 
@@ -24,6 +26,10 @@ files; this is what a session needs to change them safely.
   share of flat-horizon sun a run sees, then applies the terrain mask on 5-minute steps, so the
   sunset hour is not counted twice. Keep that when touching it (tests cover it).
 - The sun is visible when its altitude exceeds `max(0, horizon) - 0.833°`.
+- Drives: Google's `RouteMatrix` (Maps JavaScript API, `routes` library), traffic-aware, 26
+  billed elements per request against a free tier of about 5,000 a month. Answers are cached per
+  15-minute departure slot (15 min near term, 6 h further out); keep it that way. OSRM fills in
+  when Google fails or has no route.
 - Free APIs, keep the load low: the forecast is one request for all places, cached 30 min in
   localStorage (Open-Meteo's free tier counts each location); OSRM drives are cached until the
   places change; restaurant lists for a week. Overpass is often at capacity: it must fail politely.
