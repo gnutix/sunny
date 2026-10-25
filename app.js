@@ -226,7 +226,10 @@ function outlook(home, shown) {
   return { homeSunny, best };
 }
 
-function verdict(leave, home, shown) {
+// A real chance of sun, however small it is or far away the place
+const someChance = (r) => r.window && r.probability >= 0.1;
+
+function verdict(leave, home, shown, all) {
   const z = zurich(leave);
   const when = state.day === 0 && !state.leave ? 'now' : `at ${z.hour}:${pad(z.minute)}`;
   const day = ['', 'Tomorrow', ...['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((d) => `On ${d}`)];
@@ -246,8 +249,14 @@ function verdict(leave, home, shown) {
     parts.push(`${homeSunny ? 'For more, leaving' : 'Leaving'} ${when}, your best bet is <strong>${escape(best.place.name)}</strong>, ${duration(best.drive.minutes)} away: about <strong>${duration(best.expected)}</strong> of sun until ${clock(best.window.end)}, ${Math.round(best.probability * 100)}% sure.`);
   } else if (homeSunny) {
     parts.push('No place within reach is worth the drive.');
+  } else if (!someChance(home) && !all.some(someChance)) {
+    return state.day === 0 && !state.leave ? 'There\'s no chance to get any more sun today.'
+      : `${prefix || 'Today, '}leaving ${when}, there's no chance to get any sun.`;
   } else {
-    parts.push(`Leaving ${when}, no place within ${state.maxDrive ? duration(state.maxDrive) : 'reach'} is likely to get you sun before it sets. Try another day, or a longer drive.`);
+    const farther = outlook(home, all).best;
+    parts.push(farther
+      ? `Leaving ${when}, no place within ${duration(state.maxDrive)} is likely to get you sun. Farther out, <strong>${escape(farther.place.name)}</strong>, ${duration(farther.drive.minutes)} away, gets about <strong>${duration(farther.expected)}</strong> of sun, ${Math.round(farther.probability * 100)}% sure.`
+      : `Leaving ${when}, no place is likely to get you sun before it sets. Try another day.`);
   }
   if (prefix) parts[0] = prefix + parts[0].replace(/^(Leaving|For|No)\b/, (w) => w.toLowerCase());
   return parts.join(' ');
@@ -423,7 +432,7 @@ function render() {
   sorted.sort((a, b) => Number(!a.window && !!state.forecasts) - Number(!b.window && !!state.forecasts));
   const scale = timeline(leave, [home, ...sorted]);
   renderAxis(scale);
-  $('verdict').innerHTML = verdict(leave, home, sorted);
+  $('verdict').innerHTML = verdict(leave, home, sorted, rows.filter((r) => r.drive));
   $('places').innerHTML = row(home, scale) + sorted.map((r) => row(r, scale)).join('');
   renderTitle(home, sorted);
   renderStatus();
