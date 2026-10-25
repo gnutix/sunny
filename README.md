@@ -49,6 +49,10 @@ from Roundshot, Guidle and the resorts.
 - at most 400 route elements a day (about 15 lookups of the 26 places), past which the page
   falls back to OpenStreetMap routing.
 
+The project is billed to a family member's card. A monthly budget of 5 CHF ("Here Comes the
+Sun", this project only) emails the billing admins and the project owner at 50, 90 and 100%.
+Google can't hard-cap Maps spending, so the daily quota above is the real limit.
+
 To change it: Google Cloud console → APIs & Services → Credentials (key restrictions), and
 Google Maps Platform → Quotas → Routes API (daily cap).
 

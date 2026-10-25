@@ -13,7 +13,9 @@ files; this is what a session needs to change them safely.
   cache-first, and leaves every API and webcam request alone: those are live data, never cache them.
 - Everything committed is public. `config.js` holds the Google Maps browser key, public by design:
   in Google Cloud (project of gnutix@gmail.com) it is restricted to `https://gnutix.github.io/*`
-  and `http://127.0.0.1:8765/*`, to the Maps JavaScript and Routes APIs, under a daily quota cap.
+  and `http://127.0.0.1:8765/*`, to the Maps JavaScript and Routes APIs, with a daily cap of
+  400 route elements and a 5 CHF monthly budget alert. The billing account is the owner's
+  father's: never raise those limits without asking.
   Never commit any other kind of key.
 
 ## Code
