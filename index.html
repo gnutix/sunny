@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Here Comes the Sun</title>
+<meta name="description" content="Where to drive from La Sallaz, Lausanne, to get out of the fog and into direct sunlight.">
+<meta name="theme-color" content="#3F7CB8">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&display=swap">
+<style>
+:root {
+  --sky-top: #3f7cb8;
+  --sky: #8db6da;
+  --fog: #e3e7ea;
+  --fog-2: #cdd4da;
+  --ink: #1e2b36;
+  --muted: #56636e;
+  --line: #c4ccd3;
+  --card: #f4f6f8;
+  --sun: #f7b500;
+  --sun-core: #ffe7a0;
+  --cloud: #b9c2ca;
+  --drive: #8996a1;
+  --link: #1d5c96;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sky-top: #0c1b2e;
+    --sky: #24466b;
+    --fog: #151b21;
+    --fog-2: #222a32;
+    --ink: #e6ebef;
+    --muted: #9aa6b0;
+    --line: #2f3a44;
+    --card: #1b2229;
+    --sun: #ffbe1a;
+    --sun-core: #fff0c2;
+    --cloud: #3a4650;
+    --drive: #5d6b77;
+    --link: #8ec2f0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --sky-top: #0c1b2e; --sky: #24466b; --fog: #151b21; --fog-2: #222a32; --ink: #e6ebef; --muted: #9aa6b0;
+  --line: #2f3a44; --card: #1b2229; --sun: #ffbe1a; --sun-core: #fff0c2; --cloud: #3a4650; --drive: #5d6b77;
+  --link: #8ec2f0; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--fog);
+  color: var(--ink);
+  font: 400 16px/1.5 "Bricolage Grotesque", system-ui, sans-serif;
+  font-optical-sizing: auto;
+  font-variant-numeric: tabular-nums;
+}
+a { color: var(--link); text-underline-offset: 2px; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* ---------- Header: the sun behind the sea of fog ---------- */
+.sky {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(var(--sky-top), var(--sky) 75%);
+  padding: 44px 16px 0;
+  min-height: 240px;
+}
+.sun {
+  position: absolute;
+  right: max(16px, calc(50% - 420px));
+  bottom: calc(-150px + var(--rise, 0.4) * 160px);
+  width: 210px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, var(--sun-core) 0 30%, var(--sun) 70%);
+  box-shadow: 0 0 80px 30px color-mix(in oklab, var(--sun) 45%, transparent);
+  transition: bottom 1.8s cubic-bezier(.2, .7, .2, 1);
+}
+.fogbank {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 110px;
+  color: var(--fog);
+}
+.fogbank svg { display: block; width: 100%; height: 100%; }
+.sky h1 {
+  position: relative;
+  max-width: 860px;
+  margin: 0 auto;
+  font-size: clamp(3rem, 12vw, 6.4rem);
+  line-height: .88;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: #fff;
+  padding-bottom: 92px;
+  text-shadow: 0 1px 18px color-mix(in oklab, var(--sky-top) 50%, transparent);
+}
+.sky h1 span { display: block; }
+@media (prefers-reduced-motion: reduce) { .sun { transition: none; } }
+
+/* ---------- Verdict and controls ---------- */
+main { max-width: 860px; margin: 0 auto; padding: 0 16px 48px; }
+.verdict {
+  margin: 4px 0 28px;
+  font-size: clamp(1.2rem, 3.4vw, 1.55rem);
+  line-height: 1.35;
+  font-weight: 500;
+  max-width: 38em;
+  text-wrap: pretty;
+}
+.verdict strong { font-weight: 750; }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+.control { display: grid; gap: 4px; }
+.control > span { font-size: .85rem; color: var(--muted); }
+.days { display: flex; flex-wrap: wrap; gap: 4px; }
+.days button, .seg button {
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 5px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.days button[aria-pressed="true"], .seg button[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--fog);
+}
+.leave { display: flex; gap: 6px; align-items: center; }
+.leave button {
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 3px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.leave input, .control select {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* ---------- Timeline axis and rows ---------- */
+.axis {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--fog);
+  padding: 8px 0 6px;
+  border-bottom: 1px solid var(--line);
+}
+.axis .track { position: relative; height: 1.2em; font-size: .78rem; color: var(--muted); }
+.axis .track span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.axis .track span:first-child { transform: none; color: var(--ink); font-weight: 600; }
+
+.places { list-style: none; margin: 0; padding: 0; }
+.place { border-bottom: 1px solid var(--line); }
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, 6.2rem);
+  gap: 2px 12px;
+  align-items: baseline;
+  width: 100%;
+  padding: 12px 0 10px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.row:hover .name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.name { font-size: 1.18rem; font-weight: 650; letter-spacing: -0.01em; }
+.where { display: block; font-size: .85rem; color: var(--muted); }
+.stat { font-size: .82rem; color: var(--muted); text-align: right; line-height: 1.2; }
+.stat b { display: block; font-size: 1.12rem; font-weight: 650; color: var(--ink); }
+.stat.none b { color: var(--muted); font-weight: 450; }
+.strip {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 14px;
+  margin-top: 8px;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--fog-2) 55%, transparent);
+  overflow: hidden;
+}
+.strip i { position: absolute; top: 0; bottom: 0; }
+.strip .tick { width: 1px; background: color-mix(in oklab, var(--ink) 12%, transparent); }
+.strip .drive {
+  background: repeating-linear-gradient(-45deg, var(--drive) 0 3px, transparent 3px 7px);
+  opacity: .7;
+}
+.strip .lit { background: color-mix(in oklab, var(--sun) calc(var(--p) * 100%), var(--cloud)); }
+.place.home .row { cursor: default; }
+.place.home .name::after { content: " (home)"; font-weight: 400; color: var(--muted); font-size: .9rem; }
+
+/* ---------- Detail ---------- */
+.detail {
+  padding: 4px 0 22px;
+  display: grid;
+  gap: 18px;
+}
+.detail > * { min-width: 0; }
+.detail p { margin: 0; max-width: 62ch; }
+.detail h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 650; }
+.cam { margin: 0; }
+.cam .frame {
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--card);
+  overscroll-behavior-x: contain;
+}
+.cam img { display: block; max-width: 100%; height: auto; }
+.cam .frame.pano img { max-width: none; height: 240px; }
+.cam figcaption { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+.food ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.food li { display: flex; gap: 10px; justify-content: space-between; align-items: baseline; }
+.food li small { color: var(--muted); text-align: right; white-space: nowrap; }
+.food .more { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+.links { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+
+footer {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+  font-size: .85rem;
+  color: var(--muted);
+}
+footer p { max-width: 70ch; }
+footer details { margin-top: 10px; }
+footer summary { cursor: pointer; color: var(--ink); }
+footer .key { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+footer .key input { flex: 1 1 260px; border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 5px 8px; }
+footer .key button { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+
+@media (max-width: 600px) {
+  .row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .row .label { grid-column: 1 / -1; margin-bottom: 4px; }
+  .stat { text-align: left; }
+  .days button, .seg button { padding: 5px 9px; }
+  .sun { width: 140px; right: 16px; bottom: calc(-100px + var(--rise, 0.4) * 110px); }
+  .sky { min-height: 200px; padding-top: 36px; }
+  .sky h1 { padding-bottom: 80px; }
+}
+</style>
+</head>
+<body>
+<header class="sky">
+  <div class="sun" aria-hidden="true"></div>
+  <h1><span>Here Comes</span> <span>the Sun</span></h1>
+  <div class="fogbank" aria-hidden="true">
+    <svg viewBox="0 0 1200 110" preserveAspectRatio="none">
+      <path fill="currentColor" opacity=".55" d="M0 52 C120 30 230 60 360 44 S600 18 740 40 S1010 62 1200 34 V110 H0 Z"/>
+      <path fill="currentColor" d="M0 78 C150 58 270 84 420 70 S690 50 830 68 S1060 86 1200 62 V110 H0 Z"/>
+    </svg>
+  </div>
+</header>
+
+<main>
+  <p class="verdict" id="verdict" aria-live="polite">Reading the forecast…</p>
+
+  <div class="controls">
+    <div class="control">
+      <span>Day</span>
+      <div class="days" id="days"></div>
+    </div>
+    <label class="control">
+      <span>Leave at</span>
+      <span class="leave"><input type="time" id="leave" step="300"><button type="button" id="now" hidden>Now</button></span>
+    </label>
+    <label class="control">
+      <span>Drive up to</span>
+      <select id="max-drive">
+        <option value="45">45 min</option>
+        <option value="60">1 h</option>
+        <option value="90">1 h 30</option>
+        <option value="120">2 h</option>
+        <option value="0">Any distance</option>
+      </select>
+    </label>
+    <div class="control">
+      <span>Sort by</span>
+      <div class="seg" id="sort">
+        <button type="button" data-sort="best">Best trade-off</button>
+        <button type="button" data-sort="sun">Most sun</button>
+        <button type="button" data-sort="sure">Surest</button>
+        <button type="button" data-sort="drive">Closest</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="axis" aria-hidden="true"><div class="track" id="axis"></div></div>
+  <ol class="places" id="places"></ol>
+</main>
+
+<footer>
+  <p id="status"></p>
+  <p>Sun: the MeteoSwiss ICON-CH1 and ICON-CH2 ensembles through <a href="https://open-meteo.com/">Open-Meteo</a>. Each of their 21 to 32 runs is a plausible forecast; the percentage is the share of runs that give you at least 20 minutes of sun (or half the time left, if less). The sun counts only when it is above the local terrain, from a 90 m elevation model. Best trade-off ranks places by expected sun minus the time spent driving there. Drives: <span id="drive-source">OpenStreetMap routing, without traffic</span>. Restaurants: OpenStreetMap.</p>
+  <details>
+    <summary>Live traffic with Google Maps</summary>
+    <p>Paste a Google Maps Platform key with the Routes API enabled, restricted to this site's address. It stays in this browser.</p>
+    <form class="key" id="key-form">
+      <input type="password" id="google-key" autocomplete="off" placeholder="Google Maps API key" aria-label="Google Maps API key">
+      <button type="submit">Save key</button>
+    </form>
+  </details>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
