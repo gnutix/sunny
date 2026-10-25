@@ -217,6 +217,15 @@ function renderControls() {
   for (const b of $('sort').children) b.setAttribute('aria-pressed', String(b.dataset.sort === state.sort));
 }
 
+/** Whether staying home is sunny enough, and the place worth driving to, if any. */
+function outlook(home, shown) {
+  const homeSunny = !!(home.window && home.probability >= 0.6 && home.expected >= 30);
+  // Worth the drive only with clearly more sun than at home, once the drive is paid for
+  const atHome = homeSunny ? home.expected : 0;
+  const best = shown.filter((r) => r.window && r.probability >= 0.5 && r.expected >= 20 && netScore(r) > atHome + 15).sort(SORTS.best)[0];
+  return { homeSunny, best };
+}
+
 function verdict(leave, home, shown) {
   const z = zurich(leave);
   const when = state.day === 0 && !state.leave ? 'now' : `at ${z.hour}:${pad(z.minute)}`;
@@ -224,7 +233,7 @@ function verdict(leave, home, shown) {
   const prefix = state.day === 0 ? '' : state.day === 1 ? 'Tomorrow, ' : `${day[2 + z.weekday]}, `;
   if (!state.forecasts || !state.drives) return 'Reading the forecast…';
   const parts = [];
-  const homeSunny = home.window && home.probability >= 0.6 && home.expected >= 30;
+  const { homeSunny, best } = outlook(home, shown);
   if (!home.window && !shown.some((r) => r.window)) {
     return state.day === 0 ? 'The sun has set everywhere within reach. Look at tomorrow.' : `${prefix}the sun will have set by the time you get anywhere.`;
   }
@@ -233,9 +242,6 @@ function verdict(leave, home, shown) {
   } else if (home.window && home.probability != null) {
     parts.push(`La Sallaz stays grey: ${Math.round(home.probability * 100)}% chance of sun before ${clock(home.window.end)}.`);
   }
-  // Worth the drive only with clearly more sun than at home, once the drive is paid for
-  const atHome = homeSunny ? home.expected : 0;
-  const best = shown.filter((r) => r.window && r.probability >= 0.5 && r.expected >= 20 && netScore(r) > atHome + 15).sort(SORTS.best)[0];
   if (best) {
     parts.push(`${homeSunny ? 'For more, leaving' : 'Leaving'} ${when}, your best bet is <strong>${escape(best.place.name)}</strong>, ${duration(best.drive.minutes)} away: about <strong>${duration(best.expected)}</strong> of sun until ${clock(best.window.end)}, ${Math.round(best.probability * 100)}% sure.`);
   } else if (homeSunny) {
@@ -419,9 +425,19 @@ function render() {
   renderAxis(scale);
   $('verdict').innerHTML = verdict(leave, home, sorted);
   $('places').innerHTML = row(home, scale) + sorted.map((r) => row(r, scale)).join('');
-  const best = sorted.filter((r) => r.window).sort(SORTS.best)[0];
-  document.documentElement.style.setProperty('--rise', String(best?.probability ?? 0.25));
+  renderTitle(home, sorted);
   renderStatus();
+}
+
+// No sun to be had: here goes the sun, and it sinks into the fog
+function renderTitle(home, shown) {
+  const { homeSunny, best } = outlook(home, shown);
+  const gloomy = state.forecasts && state.drives && !homeSunny && !best;
+  const verb = gloomy ? 'Goes' : 'Comes';
+  $('title-verb').textContent = `Here ${verb}`;
+  document.title = `Here ${verb} the Sun`;
+  const rise = gloomy ? 0.05 : Math.max(best?.probability ?? 0, homeSunny ? home.probability : 0) || 0.25;
+  document.documentElement.style.setProperty('--rise', String(rise));
 }
 
 function renderStatus() {
