@@ -1,4 +1,4 @@
 // Google Maps browser key. Public by design, like every key a web page uses: Google only
 // accepts it from this site's address (HTTP referrer restriction), for the Maps JavaScript
 // and Routes APIs, under a daily quota cap. Empty: drives come from OpenStreetMap routing.
-export const GOOGLE_MAPS_KEY = '';
+export const GOOGLE_MAPS_KEY = 'AIzaSyBtOa6Kl7EG6v2_20zIr1OXxfKkhvZsxOc';

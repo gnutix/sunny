@@ -39,6 +39,19 @@ Data: [Open-Meteo](https://open-meteo.com/) (forecast), Google Maps and [OSRM](h
 (routing), [Overpass](https://overpass-api.de/) (restaurants), Copernicus DEM (terrain), webcams
 from Roundshot, Guidle and the resorts.
 
+## Google Maps key
+
+`config.js` holds a browser key from the Google Cloud project `here-comes-the-sun-512715`
+(gnutix@gmail.com). Like any key a web page uses, it is public; Google Cloud limits what it can do:
+
+- only from `https://gnutix.github.io/*` and `http://127.0.0.1:8765/*` (local preview);
+- only for the Maps JavaScript API and the Routes API;
+- at most 400 route elements a day (about 15 lookups of the 26 places), past which the page
+  falls back to OpenStreetMap routing.
+
+To change it: Google Cloud console → APIs & Services → Credentials (key restrictions), and
+Google Maps Platform → Quotas → Routes API (daily cap).
+
 ## Development
 
 ```bash
